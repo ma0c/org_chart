@@ -32,7 +32,7 @@ def print_tree(tree, employees_by_id, level):
 
     """
     for root, leaves in tree.items():
-        print(f"{'-'*level} {employees_by_id[root]['name']}")
+        print(f"{'  '*level} {employees_by_id[root]['title']}: {employees_by_id[root]['name']}")
         sorted_leaves = sorted(
             [
                 (
