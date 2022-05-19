@@ -1,0 +1,23 @@
+<html lang="en">
+    <body>
+        <h1>
+            Org Chart
+        </h1>
+        <div id="org_chart">
+
+        </div>
+    </body>
+    <script>
+        fetch("http://localhost:8000/employee").then(
+            (response) => {
+                if (response.ok) {
+                    response.text().then(
+                        (data) => document.getElementById("org_chart").innerHTML += data
+                    )
+
+                }
+            }
+        )
+
+    </script>
+</html>

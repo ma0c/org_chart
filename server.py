@@ -1,7 +1,20 @@
 import requests
-from collections import OrderedDict
+import sys
+
+from django.conf import settings
+from django.urls import path
+from django.core.management import execute_from_command_line
+from django.http import HttpResponse
+
+settings.configure(
+    DEBUG=True,
+    SECRET_KEY='A-random-secret-key!',
+    ROOT_URLCONF=sys.modules[__name__],
+)
 
 EMPLOYEES_ENDPOINT = "https://gist.githubusercontent.com/chancock09/6d2a5a4436dcd488b8287f3e3e4fc73d/raw/fa47d64c6d5fc860fabd3033a1a4e3c59336324e/employees.json"
+
+EMPLOYEE_ORG_TREE_URL_NAME = "employee_org_tree"
 
 
 def get_org_chart():
@@ -17,22 +30,10 @@ def build_tree(employee_id, children, local_managers):
 
 
 def print_tree(tree, employees_by_id, level):
-    """
-     Michael Chen
-- Barrett Glasauer
--- Chris Hancock
---- Julian Early
---- Michael Lorton
---- Shrutika Dasgupta
---- Mauricio Aizaga
-- Andres Green
--- Ryan Miller
-- Natasha Prats
--- Emily Pun
-
-    """
+    render_value = "<ul>"
     for root, leaves in tree.items():
-        print(f"{'  '*level} {employees_by_id[root]['title']}: {employees_by_id[root]['name']}")
+        render_value += f"<li>" \
+                        f"{'  '*level} {employees_by_id[root]['title']}: {employees_by_id[root]['name']}"
         sorted_leaves = sorted(
             [
                 (
@@ -44,7 +45,10 @@ def print_tree(tree, employees_by_id, level):
             key=lambda x: x[1]
         )
         for leaf_key, _ in sorted_leaves:
-            print_tree({leaf_key: leaves[leaf_key]}, employees_by_id, level+1)
+            render_value += print_tree({leaf_key: leaves[leaf_key]}, employees_by_id, level+1)
+        render_value += "</li>"
+    render_value += "</ul>"
+    return render_value
 
 
 def process_org_chart():
@@ -61,8 +65,16 @@ def process_org_chart():
     tree_head = local_managers.pop(None)
 
     tree = build_tree(None, tree_head, local_managers)
-    print_tree(tree, employees_by_id, 0)
+    return print_tree(tree, employees_by_id, 0)
 
 
-if __name__ == "__main__":
-    process_org_chart()
+def employee(request):
+    return HttpResponse(process_org_chart(), headers={"Access-Control-Allow-Origin": "*"})
+
+
+urlpatterns = [
+    path('employee', employee, name=EMPLOYEE_ORG_TREE_URL_NAME)
+]
+
+if __name__ == '__main__':
+    execute_from_command_line(sys.argv)
